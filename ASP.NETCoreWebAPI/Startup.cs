@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ASP.NETCoreWebAPIDemo
+namespace ASP.NETCoreWebAPI
 {
     /// <summary>
     /// Startup∆Ù∂Ø≈‰÷√

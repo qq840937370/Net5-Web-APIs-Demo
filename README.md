@@ -1,3 +1,5 @@
 # ASP.NETCoreWebAPIDemo
 WebAPI(ASP.NETCore)例子-NET5
 ##NET5
+ASP.NETCoreWebAPI:WebAPI工程
+ASP.NETCoreWebAPITest:WebAPI测试工程

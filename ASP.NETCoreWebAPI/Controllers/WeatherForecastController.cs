@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ASP.NETCoreWebAPIDemo.Controllers
+namespace ASP.NETCoreWebAPI.Controllers
 {
     /// <summary>
     /// 天气预报API类

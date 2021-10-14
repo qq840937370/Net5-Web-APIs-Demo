@@ -1,6 +1,6 @@
 using System;
 
-namespace ASP.NETCoreWebAPIDemo
+namespace ASP.NETCoreWebAPI
 {
     /// <summary>
     /// ÌìÆøÔ¤±¨
