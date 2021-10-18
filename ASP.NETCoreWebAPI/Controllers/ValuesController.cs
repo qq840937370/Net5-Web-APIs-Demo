@@ -26,27 +26,28 @@ namespace ASP.NETCoreWebAPI.Controllers
         }
 
         /// <summary>
-        /// 相加
-        /// https://localhost:44344/api/ValuesTest/Sum?num1=1&num2=3
+        /// 两数相加
+        /// http://localhost:30202/api/ValuesTest/Sum?num1=1&num2=3
         /// </summary>
-        /// <param name="param"></param>
+        /// <param name="num1">第一个数</param>
+        /// <param name="num2">第二个数</param>
         /// <returns></returns>
         [HttpGet]
-        public ActionResult<int> Sum(Param param)
+        public ActionResult<int> Sum(int num1, int num2)
         {
-            int SumR= param.num1 + param.num2;
-            return SumR;
+            return num1 + num2;
         }
 
         /// <summary>
-        /// 相减
+        /// 两数相减
         /// </summary>
-        /// <param name="param"></param>
+        /// <param name="param">参数</param>
         /// <returns></returns>
         [HttpPost]
-        public ActionResult<int> Sub(Param param)
+        public ActionResult<int> Subtract(Param param)
         {
-            return param.num1 - param.num2;
+            int result = param.num1 - param.num2;
+            return result;
         }
     }
 

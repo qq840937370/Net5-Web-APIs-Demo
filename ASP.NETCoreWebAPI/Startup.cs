@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 namespace ASP.NETCoreWebAPI
 {
+    //设置-启动项为swagger或者api/ValuesTest/Get
     /// <summary>
     /// Startup启动配置
     /// </summary>
@@ -31,7 +32,7 @@ namespace ASP.NETCoreWebAPI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddSwaggerGen(c =>
+            services.AddSwaggerGen(c =>  // Swagger接口可视化框架
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ASP.NETCoreWebAPI测试", Version = "v1" });
             });
@@ -44,8 +45,8 @@ namespace ASP.NETCoreWebAPI
             if (env.IsDevelopment())  //开发者特有设置
             {
                 app.UseDeveloperExceptionPage();  // 使用开发人员异常页面
-                app.UseSwagger();  // 使用帮助文档
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ASP.NETCoreWebAPI测试 v1"));  // 帮助文档UI
+                app.UseSwagger();  // 使用Swagger接口帮助框架
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ASP.NETCoreWebAPI测试 v1"));  // Swagger接口帮助文档UI
             }
 
             app.UseHttpsRedirection();  // 使用Https重定向
