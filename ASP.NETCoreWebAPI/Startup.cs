@@ -30,11 +30,10 @@ namespace ASP.NETCoreWebAPI
         // 此方法由运行时调用。使用此方法向容器中添加服务。
         public void ConfigureServices(IServiceCollection services)
         {
-
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "ASP.NETCoreWebAPI案例", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "ASP.NETCoreWebAPI测试", Version = "v1" });
             });
         }
 
@@ -46,7 +45,7 @@ namespace ASP.NETCoreWebAPI
             {
                 app.UseDeveloperExceptionPage();  // 使用开发人员异常页面
                 app.UseSwagger();  // 使用帮助文档
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ASP.NETCoreWebAPI案例 v1"));  // 帮助文档UI
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ASP.NETCoreWebAPI测试 v1"));  // 帮助文档UI
             }
 
             app.UseHttpsRedirection();  // 使用Https重定向
