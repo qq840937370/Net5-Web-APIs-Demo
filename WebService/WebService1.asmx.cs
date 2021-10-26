@@ -17,10 +17,36 @@ namespace WebService
     public class WebService1 : System.Web.Services.WebService
     {
 
-        [WebMethod]
+        [WebMethod(Description = "欢迎界面")]
         public string HelloWorld()
         {
-            return "Hello World";
+            return "Hello World！我是执笔小白";
         }
+
+        [WebMethod(Description = "求和方法")]
+        public int Add(int a, int b)
+        {
+            return a + b;
+        }
+
+        [WebMethod(Description = "求差方法")]
+        public int Sub(Tc1 tc1)
+        {
+            return tc1.num1 - tc1.num2;
+        }
+
+    }
+
+    public class Tc1
+    {
+        /// <summary>
+        /// 第一个数
+        /// </summary>
+        public int num1 { get; set; }
+
+        /// <summary>
+        /// 第二个数
+        /// </summary>
+        public int num2 { get; set; }
     }
 }
