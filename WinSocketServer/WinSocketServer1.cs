@@ -1,0 +1,216 @@
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Net;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace WinSocketServer
+{
+    public partial class WinSocketServer1 : Form
+    {
+        public WinSocketServer1()
+        {
+            InitializeComponent();
+        }
+
+        private void WinSockerServer1_Load(object sender, EventArgs e)
+        {
+
+        }
+        /// <summary>
+        /// 打开服务
+        /// </summary>
+        private void btnOpenServer_Click(object sender, EventArgs e)
+        {
+            if (txtIPAddress.Enabled == true)
+            {
+                MessageBox.Show("请先确认地址");
+                return;
+            }
+            string IpAdress = txtIPAddress.Text;
+            txtInfo.AppendText("打开监听" + DateTime.Now.ToString() + "\n");
+            Start(IpAdress);
+        }
+
+
+
+        /// <summary>
+        /// 关闭服务
+        /// </summary>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        /// <summary>
+        /// 修改
+        /// </summary>
+        private void btnModify_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        /// <summary>
+        /// 广播
+        /// </summary>
+        private void btnBroadcast_Click(object sender, EventArgs e)
+        {
+
+        }
+
+
+        #region 方法
+        private static List<WebSocket> _sockets = new List<WebSocket>();  // 存储当前所有连接的静态列表
+        private static HttpListener httpListener = new HttpListener();    // HttpListener
+
+        /// <summary>
+        /// 开启Socket服务，对参数地址进行监听
+        /// </summary>
+        /// <param name="ipAdress">监听地址，记得以 / 结尾</param>
+        private async void Start(string ipAdress)
+        {
+            try
+            {
+                httpListener.Prefixes.Add(ipAdress);
+                // 通过连接名称可以区分多个websocket服务。如可以通过 http://localhost:8080/learn http://localhost:8080/work 使用两个服务，不过需要多线程和两个http监听对象等
+                httpListener.Start();
+                lblListen.Text = "listening...";
+                while (true)
+                {
+                    // http端口监听获取内容
+                    HttpListenerContext httpListenerContext = await httpListener.GetContextAsync();
+                    if (httpListenerContext.Request.IsWebSocketRequest)  // 如果是websocket请求
+                    {
+                        // 处理SocketRequest
+                        ProcessRequest(httpListenerContext);
+                    }
+                    else
+                    {
+                        httpListenerContext.Response.StatusCode = 400;
+                        httpListenerContext.Response.Close();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                txtInfo.AppendText(ex.ToString() + DateTime.Now.ToString() + "\n");
+
+            }
+        }
+
+        /// <summary>
+        /// 处理端口监听到的请求
+        /// </summary>
+        /// <param name="httpListenerContext"></param>
+        private async void ProcessRequest(HttpListenerContext httpListenerContext)
+        {
+            WebSocketContext webSocketContext = null;  // WebSocketContext 类用于访问websocket握手中的信息
+            try
+            {
+                webSocketContext = await httpListenerContext.AcceptWebSocketAsync(subProtocol: null);
+                // 获取客户端IP
+                string ipAddress = httpListenerContext.Request.RemoteEndPoint.Address.ToString();
+                txtInfo.AppendText("connected:IPAddress" + ipAddress + "\n");
+            }
+            catch (Exception e)  // 如果出错
+            {
+                httpListenerContext.Response.StatusCode = 500;
+                httpListenerContext.Response.Close();
+                txtInfo.AppendText("Exception:" + e.ToString() + DateTime.Now.ToString() + "\n");
+                return;
+            }
+            // 获取websocket连接
+            WebSocket webSocket = webSocketContext.WebSocket;
+            _sockets.Add(webSocket);         // 此处将web socket对象加入一个静态列表中
+            SendToNewConnection(webSocket);  // 将当前服务器上最新的数据（a,b的值）发送过去
+
+            try
+            {
+                // 我们定义一个常数，它将表示接收到的数据的大小。 它是由我们建立的，我们可以设定任何值。 我们知道在这种情况下，发送的数据的大小非常小。
+                const int maxMessageSize = 2048;
+                // received bits的缓冲区
+
+                while (webSocket != null && webSocket.State == WebSocketState.Open)  // 如果连接是打开的
+                {
+                    // 此句放在while里面，每次使用都重新初始化。如果放在外面，由于没有进行清空操作，下一次接收的数据若比上一次短，则会多出一部分内容。
+                    var receiveBuffer = new ArraySegment<Byte>(new Byte[maxMessageSize]);
+
+                    WebSocketReceiveResult receiveResult = null;
+                    byte[] payloadData = null;
+                    do
+                    {
+                        // 读取数据。此类的实例表示在 WebSocket 上执行单个 ReceiveAsync 操作所得到的结果
+                        receiveResult = await webSocket.ReceiveAsync(receiveBuffer, CancellationToken.None);
+                        // 字节数组
+                        payloadData = receiveBuffer.Array.Where(b => b != 0).ToArray();
+                    }
+                    while (!receiveResult.EndOfMessage);  // 如果指示已完整接收消息则停止
+
+                    // 如果输入帧为取消帧，发送close命令。
+                    // MessageType指示当前消息是utf-8消息还是二进制信息。Text(0,明文形式),Close(2，收到关闭消息，接受已完成),Binary(1,消息采用二进制格式)
+                    if (receiveResult.MessageType == WebSocketMessageType.Close)
+                    {
+                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, String.Empty, CancellationToken.None);
+                        _sockets.Remove(webSocket);  // 从列表移除当前连接
+
+                    }
+                    else
+                    {
+                        // 因为我们知道这是一个字符串，我们转换它                        
+                        string receiveString = System.Text.Encoding.UTF8.GetString(payloadData, 0, payloadData.Length);
+
+                        try  // 将反序列化内容放入try中，避免无法匹配、内容为空等可能报错的地方
+                        {
+                            // 将转换后的字符串内容进行json反序列化。参考：https://www.cnblogs.com/yinmu/p/12160343.html
+                            TestValue tv = JsonConvert.DeserializeObject<TestValue>(receiveString);
+                            // 将收到的a,b的值显示到文本框
+                            if (tv != null)
+                            {
+                                string valueA = string.Empty, valueB = string.Empty;
+                                if (tv.a != null && tv.a.Length > 0) { valueA = tv.a; }
+                                if (tv.a != null && tv.b.Length > 0) { valueB = tv.b; }
+                                txtAvalue.Text = valueA;
+                                txtBvalue.Text = valueB;
+                            }
+
+                            RefreshConnectionList();  // 先清理无效的连接，否则会导致服务端websocket被dispose
+
+                            //  当接收到文本消息时，对当前服务器上所有web socket连接进行广播
+                            foreach (var innerSocket in _sockets)
+                            {
+                                await innerSocket.SendAsync(new ArraySegment<byte>(payloadData), WebSocketMessageType.Text, true, CancellationToken.None);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // 如果json反序列化出了问题
+                            txtInfo.AppendText(ex.ToString() + DateTime.Now.ToString() + "\n");  // 将错误类型显示出来
+                            txtInfo.AppendText(receiveString + DateTime.Now.ToString() + "\n");  // 将收到的原始字符串显示出来
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                if (e.GetType().ToString() == "System.Net.WebSockets.WebSocketException")
+                {
+                    // 客户端关闭时会抛出此错误
+                    txtInfo.AppendText("a connection closed" + DateTime.Now.ToString() + "\n");
+                }
+                else
+                {
+                    txtInfo.AppendText(e.ToString() + DateTime.Now.ToString() + "\n");
+                }
+            }
+        }
+        #endregion
+    }
+}

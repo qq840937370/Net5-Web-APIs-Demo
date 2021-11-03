@@ -17,7 +17,7 @@ namespace WinSocketServer
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new WinSockerServer1());
+            Application.Run(new WinSocketServer1());
         }
     }
 }
