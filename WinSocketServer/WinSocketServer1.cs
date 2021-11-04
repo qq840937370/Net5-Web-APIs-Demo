@@ -67,7 +67,7 @@ namespace WinSocketServer
         }
 
 
-        #region 方法
+        #region 监听方法
         private static List<WebSocket> _sockets = new List<WebSocket>();  // 存储当前所有连接的静态列表
         private static HttpListener httpListener = new HttpListener();    // HttpListener
 
@@ -210,6 +210,80 @@ namespace WinSocketServer
                     txtInfo.AppendText(e.ToString() + DateTime.Now.ToString() + "\n");
                 }
             }
+        }
+        #endregion
+
+# region 广播
+        /// <summary>
+        /// 服务端主动向所有客户端广播
+        /// </summary>
+        /// <param name="jsonmessage">传过来的应该是序列化后的json字符串，接收方会通过TestValue类进行反序列化获取a,b的内容</param>
+        public async void Broadcast(string jsonmessage)
+        {
+            try
+            {
+                Byte[] bytes = System.Text.Encoding.UTF8.GetBytes(jsonmessage);
+                RefreshConnectionList();//先清理无效的连接，否则会导致服务端websocket被dispose
+                //当接收到文本消息时，对当前服务器上所有web socket连接进行广播
+                foreach (var innerSocket in _sockets)
+                {
+                    await innerSocket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
+                }
+            }
+            catch (Exception ex)
+            {
+                txtInfo.AppendText(ex.ToString() + DateTime.Now.ToString() + "\n");
+                MessageBox.Show("某些连接出了问题，如果广播多次出问题，请重启服务端");
+            }
+        }
+        /// <summary>
+        /// 监听到一个新的websocket连接后，将服务器当前最新数据同步过去
+        /// </summary>
+        /// <param name="currentWebsocket">当前新接入的websocket连接</param>
+        public async void SendToNewConnection(WebSocket currentWebsocket)
+        {
+            try
+            {
+                string jsonmessage = SerializeJson(txtAvalue.Text, txtBvalue.Text);
+                Byte[] bytes = System.Text.Encoding.UTF8.GetBytes(jsonmessage);
+
+                if (currentWebsocket.State == WebSocketState.Open)
+                {
+                    await currentWebsocket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);//try访问已释放对象问题
+                }
+                else
+                {
+                    //此处并不对该链接进行移除，会导致调用本方法后的代码出问题，只需在进行发送时确认状态即可
+                    txtInfo.AppendText("新接入连接:" + currentWebsocket.GetHashCode().ToString() + "的连接状态不为open，因此停止向其同步数据" + DateTime.Now.ToString() + "\n");
+                }
+            }
+            catch (Exception ex)
+            {
+                txtInfo.AppendText(ex.ToString() + DateTime.Now.ToString() + "\n");
+            }
+        }
+
+        /// <summary>
+        /// 刷新当前websocket连接列表，如果状态为Closed，则移除。连接异常断开后会被dispose，如果访问会报错，但可以获取状态为closed
+        /// </summary>
+        public static void RefreshConnectionList()
+        {
+            if (_sockets != null)//lock不能锁定空值
+            {
+                lock (_sockets)//锁定数据源
+                {
+                    //System.InvalidOperationException: 集合已修改；可能无法执行枚举操作。
+                    //使用foreach不能执行删除、修改，这是规定。你可以使用for循环遍历修改。删除数据正确做法，for循环 i 要从大到小
+                    for (int i = _sockets.Count - 1; i >= 0; i--)
+                    {
+                        if (_sockets[i].State != WebSocketState.Open)
+                        {
+                            _sockets.Remove(_sockets[i]);
+                        }
+                    }
+                }
+            }
+
         }
         #endregion
     }
