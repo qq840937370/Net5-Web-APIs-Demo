@@ -47,7 +47,25 @@ namespace WinSocketServer
         /// </summary>
         private void btnClose_Click(object sender, EventArgs e)
         {
-
+            if (httpListener.IsListening)
+            {
+                try
+                {
+                    httpListener.Stop();
+                    txtInfo.AppendText("成功关闭" + DateTime.Now.ToString() + "\n");
+                    lblListen.Text = "服务为关闭状态";
+                }
+                catch (Exception ex)
+                {
+                    txtInfo.AppendText(ex.ToString() + DateTime.Now.ToString() + "\n");
+                }
+            }
+            else
+            {
+                txtInfo.AppendText("此时服务并未处于监听状态，无法关闭" + DateTime.Now.ToString() + "\n");
+                lblListen.Text = "服务为关闭状态";
+                return;
+            }
         }
 
         /// <summary>
@@ -55,7 +73,16 @@ namespace WinSocketServer
         /// </summary>
         private void btnModify_Click(object sender, EventArgs e)
         {
-
+            if (btnModify.Text == "修改")
+            {
+                txtIPAddress.Enabled = true;
+                btnModify.Text = "确定";
+            }
+            else if (btnModify.Text == "确定")
+            {
+                txtIPAddress.Enabled = false;
+                btnModify.Text = "修改";
+            }
         }
 
         /// <summary>
@@ -65,7 +92,18 @@ namespace WinSocketServer
         {
 
         }
-
+        /// <summary>
+        /// 显示链接列表
+        /// </summary>
+        private void btnShowCon_Click(object sender, EventArgs e)
+        {
+            int ConnectionCount = _sockets.Count;
+            txtInfo.AppendText("服务端当前存储了" + ConnectionCount + "个客户端连接:\n" + DateTime.Now.ToString() + "\n");
+            foreach (WebSocket innersocket in _sockets)
+            {
+                txtInfo.AppendText(innersocket.GetHashCode().ToString() + innersocket.State.ToString() + "\n");
+            }
+        }
 
         #region 监听方法
         private static List<WebSocket> _sockets = new List<WebSocket>();  // 存储当前所有连接的静态列表
@@ -79,10 +117,10 @@ namespace WinSocketServer
         {
             try
             {
-                httpListener.Prefixes.Add(ipAdress);
+                httpListener.Prefixes.Add(ipAdress); // 添加监听的URL范围
                 // 通过连接名称可以区分多个websocket服务。如可以通过 http://localhost:8080/learn http://localhost:8080/work 使用两个服务，不过需要多线程和两个http监听对象等
                 httpListener.Start();
-                lblListen.Text = "listening...";
+                lblListen.Text = "监听中...";
                 while (true)
                 {
                     // http端口监听获取内容
@@ -102,7 +140,6 @@ namespace WinSocketServer
             catch (Exception ex)
             {
                 txtInfo.AppendText(ex.ToString() + DateTime.Now.ToString() + "\n");
-
             }
         }
 
@@ -115,10 +152,10 @@ namespace WinSocketServer
             WebSocketContext webSocketContext = null;  // WebSocketContext 类用于访问websocket握手中的信息
             try
             {
-                webSocketContext = await httpListenerContext.AcceptWebSocketAsync(subProtocol: null);
+                webSocketContext = await httpListenerContext.AcceptWebSocketAsync(subProtocol: null);  // 配置协议为空
                 // 获取客户端IP
                 string ipAddress = httpListenerContext.Request.RemoteEndPoint.Address.ToString();
-                txtInfo.AppendText("connected:IPAddress" + ipAddress + "\n");
+                txtInfo.AppendText("客户端IP地址:" + ipAddress + "\n");
             }
             catch (Exception e)  // 如果出错
             {
@@ -213,7 +250,7 @@ namespace WinSocketServer
         }
         #endregion
 
-# region 广播
+        #region 广播
         /// <summary>
         /// 服务端主动向所有客户端广播
         /// </summary>
@@ -286,5 +323,6 @@ namespace WinSocketServer
 
         }
         #endregion
+
     }
 }
