@@ -90,7 +90,10 @@ namespace WinSocketServer
         /// </summary>
         private void btnBroadcast_Click(object sender, EventArgs e)
         {
-
+            string jsonmessage = RequestMsg.SerializeJson(txtAvalue.Text, txtBvalue.Text);
+            txtInfo.AppendText("广播" + DateTime.Now.ToString() + ":\n");
+            txtInfo.AppendText("内容：" + jsonmessage + "\n");
+            Broadcast(jsonmessage);
         }
         /// <summary>
         /// 显示链接列表
@@ -240,7 +243,7 @@ namespace WinSocketServer
                 if (e.GetType().ToString() == "System.Net.WebSockets.WebSocketException")
                 {
                     // 客户端关闭时会抛出此错误
-                    txtInfo.AppendText("a connection closed" + DateTime.Now.ToString() + "\n");
+                    txtInfo.AppendText("连接已关闭" + DateTime.Now.ToString() + "\n");
                 }
                 else
                 {
@@ -281,7 +284,7 @@ namespace WinSocketServer
         {
             try
             {
-                string jsonmessage = SerializeJson(txtAvalue.Text, txtBvalue.Text);
+                string jsonmessage = RequestMsg.SerializeJson(txtAvalue.Text, txtBvalue.Text);
                 Byte[] bytes = System.Text.Encoding.UTF8.GetBytes(jsonmessage);
 
                 if (currentWebsocket.State == WebSocketState.Open)
@@ -323,6 +326,5 @@ namespace WinSocketServer
 
         }
         #endregion
-
     }
 }
