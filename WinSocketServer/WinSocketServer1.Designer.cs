@@ -74,6 +74,7 @@ namespace WinSocketServer
             this.txtIPAddress.Name = "txtIPAddress";
             this.txtIPAddress.Size = new System.Drawing.Size(200, 23);
             this.txtIPAddress.TabIndex = 2;
+            this.txtIPAddress.Text = "http://127.0.0.1:8080/";
             // 
             // label2
             // 
