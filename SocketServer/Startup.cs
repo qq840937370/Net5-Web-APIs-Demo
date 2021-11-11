@@ -45,6 +45,8 @@ namespace SocketServer
 
             app.UseRouting();
 
+            app.UseWebSockets();  // ÆôÓÃWebSocket
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
